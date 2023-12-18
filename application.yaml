@@ -1,0 +1,26 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    username: root
+    password: Cnhtvktybt17!
+    url: jdbc:mysql://localhost:3306/search_engine2?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        jdbc:
+          batch_size: 100
+          orders_inserts: true
+          orders_update: true
+    hibernate:
+      ddl-auto: update
+    sql-show: true
+
+indexing-settings:
+  sites:
+    - url: https://www.playback.ru
+      name: Playback
+    - url: https://www.lutherancathedral.ru
+      name: LutheranCathedral
