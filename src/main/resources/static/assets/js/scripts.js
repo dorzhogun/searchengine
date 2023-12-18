@@ -1673,6 +1673,7 @@ var API = function(){
             }
         }
     };
+
     function shiftCheck($element, wave){
         var text = '',
             check = $element.data('check');
