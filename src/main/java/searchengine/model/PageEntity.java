@@ -13,7 +13,7 @@ public class PageEntity implements Serializable
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @Column(length = 1000, name = "`path`", columnDefinition = "VARCHAR(515)", nullable = false)
+    @Column(name = "`path`", columnDefinition = "VARCHAR(255)", nullable = false)
     private String path;
 
     @Column(name = "code", columnDefinition = "INT", nullable = false)

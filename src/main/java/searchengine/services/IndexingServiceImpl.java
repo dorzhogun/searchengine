@@ -9,7 +9,7 @@ import searchengine.model.SiteEntity;
 import searchengine.model.Status;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
-import searchengine.services.parsers.SiteIndexer;
+import searchengine.utils.parsers.SiteIndexer;
 
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;

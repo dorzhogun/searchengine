@@ -1,4 +1,4 @@
-package searchengine.services.parsers;
+package searchengine.utils.parsers;
 
 import lombok.extern.slf4j.Slf4j;
 import searchengine.dto.statistics.DtoPage;
@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
-@Slf4j
 
+@Slf4j
 public class SiteIndexer implements Runnable
 {
     private final SiteRepository siteRepository;
@@ -33,21 +33,19 @@ public class SiteIndexer implements Runnable
             handleInterrupt();
             return;
         }
-            try {
-                List<DtoPage> pages = getDtoPages();
-                savePagesIntoDb(pages);
-            } catch (InterruptedException | IOException e) {
-                handleException();
-                stopSiteIndexing();
+        try {
+            savePagesIntoDb(getDtoPages());
+        } catch (InterruptedException | IOException e) {
+            handleException();
+            stopSiteIndexing();
         }
     }
 
     private List<DtoPage> getDtoPages() throws InterruptedException, IOException {
         String urlToParse = url + "/";
         List<DtoPage> dtoPagesVector = new Vector<>();
-        List<String> linksList = new Vector<>();
         ForkJoinPool forkJoinPool = new ForkJoinPool(2);
-        List<DtoPage> dtoPages = forkJoinPool.invoke(new RecursiveParser(urlToParse, dtoPagesVector, linksList));
+        List<DtoPage> dtoPages = forkJoinPool.invoke(new RecursiveParser(urlToParse, dtoPagesVector, urlToParse));
         return new CopyOnWriteArrayList<>(dtoPages);
     }
 
@@ -102,5 +100,4 @@ public class SiteIndexer implements Runnable
         String excMessage = "Indexing was stopped for : " + url;
         log.error(excMessage);
     }
-
 }

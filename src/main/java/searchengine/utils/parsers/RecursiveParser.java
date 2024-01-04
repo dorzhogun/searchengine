@@ -1,4 +1,4 @@
-package searchengine.services.parsers;
+package searchengine.utils.parsers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -7,21 +7,28 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import searchengine.dto.statistics.DtoPage;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
+
 
 @Slf4j
 public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
     private final String currentUrl;
-    private final List<String> linksList;
+    private final String web;
     private final List<DtoPage> dtoPages;
+    List<String> currentList;
+    static ConcurrentSkipListSet<String> linksListResult = new ConcurrentSkipListSet<>();
 
-    public RecursiveParser(String currentUrl, List<DtoPage> dtoPages, List<String> linksList) {
+    public RecursiveParser(String currentUrl, List<DtoPage> dtoPages, String web) {
         this.currentUrl = currentUrl;
+        this.web = web;
         this.dtoPages = dtoPages;
-        this.linksList = linksList;
+        currentList = new ArrayList<>();
     }
 
     private Document getDocument(String currentUrl) {
@@ -42,6 +49,29 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
         }
     }
 
+    public List<String> getLinksList(String currentUrl)
+    {
+        try {
+            Thread.sleep(150);
+            Document doc = Jsoup.connect(currentUrl).ignoreHttpErrors(true).ignoreContentType(true)
+                    .userAgent("Edg/118.0.2088.46")
+                    .timeout(100000).referrer("https://google.com").followRedirects(false).get();
+
+            Elements elements = doc.select("body").select("a");
+            for (Element element : elements) {
+                String nextLink = element.absUrl("href");
+                if (isLink(nextLink)) {
+                    currentList.add(nextLink);
+                }
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return currentList;
+    }
+
     @Override
     protected List<DtoPage> compute() {
         try {
@@ -51,13 +81,12 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
             int statusCode = getResponse(currentUrl).statusCode();
             DtoPage dtoPage = new DtoPage(currentUrl, html, statusCode);
             dtoPages.add(dtoPage);
-            Elements elements =doc.select("body").select("a");
+            List<String>parserLinks = getLinksList(currentUrl);
             List<RecursiveParser> taskList = new ArrayList<>();
-            for (Element el : elements) {
-                String link = el.absUrl("href");
-                if (isLink(link, el) && !linksList.contains(link)) {
-                    linksList.add(link);
-                    RecursiveParser task = new RecursiveParser(link, dtoPages, linksList);
+            for (String link : parserLinks) {
+                if (!linksListResult.contains(link)) {
+                    linksListResult.add(link);
+                    RecursiveParser task = new RecursiveParser(link, dtoPages, web);
                     task.fork();
                     taskList.add(task);
                 }
@@ -71,8 +100,8 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
         return dtoPages;
     }
 
-    public boolean isLink(String path, Element el) {
-        return path.startsWith(el.baseUri()) && !path.endsWith(".php") && !path.endsWith(".jpg") && !path.endsWith("#")
-                && !path.endsWith(".png") && !path.endsWith(".pdf") && !path.endsWith("=");
+    public boolean isLink(String path) {
+        return path.startsWith(web) && !path.endsWith(".php") && !path.endsWith(".jpg") && !path.endsWith("#")
+                && !path.endsWith(".png") && !path.endsWith(".pdf") && !path.endsWith("=") && !path.contains("%");
     }
 }

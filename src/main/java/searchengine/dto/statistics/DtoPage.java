@@ -9,6 +9,4 @@ public class DtoPage {
     String path;
     String content;
     int code;
-
-
 }
