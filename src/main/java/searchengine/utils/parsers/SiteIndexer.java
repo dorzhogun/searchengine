@@ -58,6 +58,7 @@ public class SiteIndexer implements Runnable
                 String format = dp.getPath().substring(first);
                 String content = dp.getContent();
                 int code = dp.getCode();
+                log.info("Page " + format + " has status code : " + code);
                 PageEntity page = new PageEntity();
                 page.setSiteEntity(site);
                 page.setCode(code);

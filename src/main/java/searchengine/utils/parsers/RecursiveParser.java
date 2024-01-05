@@ -15,7 +15,6 @@ import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 
-
 @Slf4j
 public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
     private final String currentUrl;
@@ -31,7 +30,7 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
         currentList = new ArrayList<>();
     }
 
-    private Document getDocument(String currentUrl) {
+    public Document getDocument(String currentUrl) {
         try {
             return Jsoup.connect(currentUrl).ignoreHttpErrors(true).ignoreContentType(true)
                     .userAgent("Edg/118.0.2088.46")
@@ -41,9 +40,11 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
         }
     }
 
-    private Connection.Response getResponse(String currentUrl) {
+    public Connection.Response getResponse(String currentUrl) {
         try {
-            return Jsoup.connect(currentUrl).response();
+            return Jsoup.connect(currentUrl).ignoreHttpErrors(true).ignoreContentType(true)
+                    .userAgent("Edg/118.0.2088.46")
+                    .timeout(100000).referrer("https://google.com").followRedirects(false).execute();
         } catch (Exception e) {
             throw new RuntimeException();
         }
@@ -76,11 +77,10 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
     protected List<DtoPage> compute() {
         try {
             Thread.sleep(150);
-            Document doc = getDocument(currentUrl);
-            String html = doc.outerHtml();
-            int statusCode = getResponse(currentUrl).statusCode();
-            DtoPage dtoPage = new DtoPage(currentUrl, html, statusCode);
-            dtoPages.add(dtoPage);
+            String html = getDocument(currentUrl).outerHtml();
+            int code = getResponse(currentUrl).statusCode();
+            dtoPages.add(new DtoPage(currentUrl, html, code));
+            log.info("dtoPage " + currentUrl + " has status code : " + code);
             List<String>parserLinks = getLinksList(currentUrl);
             List<RecursiveParser> taskList = new ArrayList<>();
             for (String link : parserLinks) {
@@ -101,7 +101,8 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
     }
 
     public boolean isLink(String path) {
-        return path.startsWith(web) && !path.endsWith(".php") && !path.endsWith(".jpg") && !path.endsWith("#")
+        return path.startsWith(web) && !path.isEmpty() && !path.isBlank()
+                && !path.endsWith(".php") && !path.endsWith(".jpg") && !path.endsWith("#")
                 && !path.endsWith(".png") && !path.endsWith(".pdf") && !path.endsWith("=") && !path.contains("%");
     }
 }
