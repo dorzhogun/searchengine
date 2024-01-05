@@ -80,7 +80,6 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
             String html = getDocument(currentUrl).outerHtml();
             int code = getResponse(currentUrl).statusCode();
             dtoPages.add(new DtoPage(currentUrl, html, code));
-            log.info("dtoPage " + currentUrl + " has status code : " + code);
             List<String>parserLinks = getLinksList(currentUrl);
             List<RecursiveParser> taskList = new ArrayList<>();
             for (String link : parserLinks) {
