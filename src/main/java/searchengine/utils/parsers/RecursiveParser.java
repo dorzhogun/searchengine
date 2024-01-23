@@ -60,7 +60,7 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
 
             Elements elements = doc.select("body").select("a");
             for (Element element : elements) {
-                String nextLink = element.absUrl("href");
+                String nextLink = element.absUrl("href").toLowerCase();
                 if (isLink(nextLink)) {
                     currentList.add(nextLink);
                 }
@@ -80,7 +80,7 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
             String html = getDocument(currentUrl).outerHtml();
             int code = getResponse(currentUrl).statusCode();
             dtoPages.add(new DtoPage(currentUrl, html, code));
-            List<String>parserLinks = getLinksList(currentUrl);
+            List<String> parserLinks = getLinksList(currentUrl);
             List<RecursiveParser> taskList = new ArrayList<>();
             for (String link : parserLinks) {
                 if (!linksListResult.contains(link)) {
@@ -100,8 +100,10 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
     }
 
     public boolean isLink(String path) {
-        return path.startsWith(web) && !path.isEmpty() && !path.isBlank()
-                && !path.endsWith(".php") && !path.endsWith(".jpg") && !path.endsWith("#")
-                && !path.endsWith(".png") && !path.endsWith(".pdf") && !path.endsWith("=") && !path.contains("%");
+        return path.startsWith(web) && !path.isBlank() && !(path.length() < 3) && !path.contains(".zip") && !path.contains(".nc")
+                && !path.contains(".php") && !path.contains(".jpg") && !path.contains("#") && !path.contains("$")
+                && !path.contains(".png") && !path.contains(".pdf") && !path.contains("=") && !path.contains("%")
+                && !path.contains(".docx") && !path.contains(".xlsx") && !path.contains(".fig") && !path.contains(".doc")
+                && !path.contains(".pptx") && !path.contains(".jpeg");
     }
 }

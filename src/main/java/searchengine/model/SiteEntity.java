@@ -14,7 +14,7 @@ import java.util.List;
 public class SiteEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private long id;
 
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -31,7 +31,10 @@ public class SiteEntity implements Serializable {
     @Column(name = "name", columnDefinition = "VARCHAR(255)", nullable = false)
     private String name;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "siteEntity",cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "siteEntity", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PageEntity> pageEntityList = new ArrayList<>();
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "siteEntity", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LemmaEntity> lemmaEntityList = new ArrayList<>();
 
 }

@@ -8,7 +8,7 @@ import searchengine.model.Status;
 import java.util.List;
 
 @Repository
-public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
+public interface SiteRepository extends JpaRepository<SiteEntity, Long> {
     SiteEntity findByUrl(String url);
     List<SiteEntity> findAllByStatus(Status status);
     void deleteByUrl(String url);

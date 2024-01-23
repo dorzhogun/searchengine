@@ -5,10 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.Status;
+import searchengine.morphology.Morphology;
+import searchengine.repositories.IndexSearchRepository;
+import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 import searchengine.repositories.SiteRepository;
+import searchengine.utils.parsers.IndexParser;
+import searchengine.utils.parsers.LemmaParser;
+import searchengine.utils.parsers.SinglePageParser;
 import searchengine.utils.parsers.SiteIndexer;
 
 import javax.transaction.Transactional;
@@ -25,7 +32,12 @@ public class IndexingServiceImpl implements IndexingService {
 
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
+    private final LemmaRepository lemmaRepository;
+    private final IndexSearchRepository indexSearchRepository;
+    private final LemmaParser lemmaParser;
+    private final IndexParser indexParser;
     private final SitesList sitesList;
+    private final Morphology morphology;
     private ExecutorService executorService;
 
     @Override
@@ -38,7 +50,7 @@ public class IndexingServiceImpl implements IndexingService {
             List<Site> siteList = sitesList.getSites();
             for (Site site : siteList) {
                 if (siteRepository.findByUrl(site.getUrl()) != null) {
-                    log.info("Removed from DB data about : " + site.getUrl());
+                    log.info("Removed from DB : " + site.getUrl());
                     siteRepository.deleteByUrl(site.getUrl());
                 }
                 SiteEntity siteEntity = new SiteEntity();
@@ -49,7 +61,9 @@ public class IndexingServiceImpl implements IndexingService {
                 siteEntity.setStatusTime(LocalDateTime.now());
                 siteRepository.save(siteEntity);
                 siteRepository.flush();
-                executorService.submit(new SiteIndexer(siteRepository, pageRepository, site.getUrl()));
+                executorService.submit(new SiteIndexer(siteRepository,
+                        pageRepository, lemmaRepository, indexSearchRepository,
+                        lemmaParser, indexParser, site.getUrl()));
                 log.info("Start parsing the site " + siteEntity.getUrl());
             }
             executorService.shutdown();
@@ -58,7 +72,21 @@ public class IndexingServiceImpl implements IndexingService {
     }
 
     @Override
-    public boolean indexingUrl() {
+    public boolean urlIndexing(String url) {
+        int first = url.indexOf("/", url.indexOf("/") + 2);
+        String path = url.substring(first);
+        if (urlCheck(url) && !(pageRepository.findPageByPath(path) == null)) {
+            log.info("Start indexing for single page : " + path);
+            PageEntity page = pageRepository.findPageByPath(path);
+            SiteEntity sitePage = page.getSiteEntity();
+            pageRepository.deleteById(page.getId());
+            pageRepository.flush();
+            log.info("Page with id : " + page.getId() + " - was deleted successfully!");
+            executorService = Executors.newFixedThreadPool(2);
+            executorService.submit(new SinglePageParser(url, sitePage, path, siteRepository,
+                    pageRepository, lemmaRepository, indexSearchRepository, morphology));
+            return true;
+        }
         return false;
     }
 
@@ -91,6 +119,17 @@ public class IndexingServiceImpl implements IndexingService {
         }
         return false;
     }
+
+    private boolean urlCheck(String url) {
+        List<Site> urlList = sitesList.getSites();
+        for (Site site : urlList) {
+            if (url.startsWith(site.getUrl())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }
 
 

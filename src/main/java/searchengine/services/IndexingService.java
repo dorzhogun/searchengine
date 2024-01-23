@@ -2,6 +2,6 @@ package searchengine.services;
 
 public interface IndexingService {
     boolean indexingAll();
-    boolean indexingUrl();
+    boolean urlIndexing(String url);
     boolean stopIndexing();
 }
