@@ -76,18 +76,22 @@ public class ApiController {
             return ResponseEntity.badRequest().body(new ErrorResponse(false, "Задан пустой поисковый запрос"));
         } else {
             List<StatisticsSearch> statisticsSearchList;
-            if (!site.isEmpty()) {
-                if (siteRepository.findByUrl(site) == null) {
+            if (!site.isEmpty() && siteRepository.findByUrl(site) == null) {
                     return new ResponseEntity<>(new ErrorResponse(false, "Указанная страница не найдена"),
                             HttpStatus.BAD_REQUEST);
-                } else {
-                    statisticsSearchList = searchService.siteSearch(request, site, offset, limit);
-                }
+            } if(!site.isEmpty()) {
+                statisticsSearchList = searchService.siteSearch(request, site, offset, limit);
             } else {
                 statisticsSearchList = searchService.allSitesSearch(request, offset, limit);
             }
-            return new ResponseEntity<>(new SearchResult(true, statisticsSearchList.size(),
-                    statisticsSearchList), HttpStatus.OK);
+            if (!(statisticsSearchList == null)) {
+                return new ResponseEntity<>(new SearchResult(true, statisticsSearchList.size(),
+                        statisticsSearchList), HttpStatus.OK);
+            } else {
+                statisticsSearchList = new ArrayList<>();
+                return new ResponseEntity<>(new SearchResult(true, 0,
+                        statisticsSearchList), HttpStatus.OK);
+            }
         }
     }
 }

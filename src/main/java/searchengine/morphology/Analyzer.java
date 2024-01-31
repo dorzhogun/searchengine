@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import org.apache.lucene.morphology.LuceneMorphology;
+import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ import java.util.Locale;
 @Slf4j
 public class Analyzer implements Morphology
 {
+    private static EnglishLuceneMorphology englishLuceneMorphology;
     private static RussianLuceneMorphology russianLuceneMorphology;
     private final static String REGEX = "\\p{Punct}|[0-9]|№|©|◄|«|»|—|-|@|…";
     private final static Marker INVALID_SYMBOL_MARKER = MarkerManager.getMarker("INVALID_SYMBOL");
@@ -28,8 +30,21 @@ public class Analyzer implements Morphology
     static {
         try {
             russianLuceneMorphology = new RussianLuceneMorphology();
+            englishLuceneMorphology = new EnglishLuceneMorphology();
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
+        }
+    }
+
+    private String checkLanguage(String word) {
+        String rusAlphabet = "[а-яА-Я]+";
+        String enAlphabet = "[a-zA-Z]+";
+        if (word.matches(rusAlphabet)) {
+            return "RUS";
+        } else if (word.matches(enAlphabet)) {
+            return "ENG";
+        } else {
+            return "";
         }
     }
 
@@ -53,10 +68,13 @@ public class Analyzer implements Morphology
     public List<String> getLemmaList(String word) {
         List<String> lemmaList = new ArrayList<>();
         try {
-            List<String> baseRusForm = russianLuceneMorphology.getNormalForms(word);
-            if (!isServiceWord(word)) {
+            if (checkLanguage(word).equals("RUS") && !isRusServiceWord(word)) {
+                List<String> baseRusForm = russianLuceneMorphology.getNormalForms(word);
                 lemmaList.addAll(baseRusForm);
-            }
+            } else if (checkLanguage(word).equals("ENG") && !isEngServiceWord(word)) {
+                List<String> baseEngForm = englishLuceneMorphology.getNormalForms(word);
+                lemmaList.addAll(baseEngForm);
+                }
         } catch (Exception e) {
             LOGGER.debug(INVALID_SYMBOL_MARKER, "Символ не найден - " + word);
         }
@@ -80,15 +98,28 @@ public class Analyzer implements Morphology
         return lemmaIndexList;
     }
 
-    private boolean isServiceWord(String word) {
-        List<String> morphologyForms = russianLuceneMorphology.getMorphInfo(word);
-        for (String form : morphologyForms) {
+    private boolean isRusServiceWord(String word) {
+        List<String> rusMorphologyForms = russianLuceneMorphology.getMorphInfo(word);
+        for (String form : rusMorphologyForms) {
             if (form.contains("ПРЕДЛ")
                     || form.contains("СОЮЗ")
                     || form.contains("МЕЖД")
                     || form.contains("МС")
                     || form.contains("ЧАСТ")
                     || form.length() <= 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+    private boolean isEngServiceWord(String word) {
+        List<String> enMorphologyForms = englishLuceneMorphology.getMorphInfo(word);
+        for (String form : enMorphologyForms) {
+            if (form.contains("PREP")
+                    || form.contains("CONJ")
+                    || form.contains("INTER")
+                    || form.contains("ARTICLE")
+                    || form.length() <= 1) {
                 return true;
             }
         }

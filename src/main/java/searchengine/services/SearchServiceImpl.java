@@ -96,7 +96,6 @@ public class SearchServiceImpl implements SearchService
             String site = pageSite.getUrl();
             String siteName = pageSite.getName();
             Float absRelevance = pageList.get(page);
-
             StringBuilder clearContent = new StringBuilder();
             String title = HtmlCodeCleaner.clear(content, "title");
             String body = HtmlCodeCleaner.clear(content, "body");

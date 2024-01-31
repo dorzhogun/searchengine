@@ -36,34 +36,36 @@ public class IndexParserImpl implements IndexParser {
         DtoIndexList = new ArrayList<>();
 
         for (PageEntity page : pageList) {
-            if (page.getCode() < 400) {
-                long pageId = page.getId();
-                String content = page.getContent();
-                String title = HtmlCodeCleaner.clear(content, "title");
-                String body = HtmlCodeCleaner.clear(content, "body");
-                HashMap<String, Integer> titleList = morphology.getLemmaMap(title);
-                HashMap<String, Integer> bodyList = morphology.getLemmaMap(body);
-
-                for (LemmaEntity lemma : lemmaList) {
-                    long lemmaId = lemma.getId();
-                    String theExactLemma = lemma.getLemma();
-                    if (titleList.containsKey(theExactLemma) || bodyList.containsKey(theExactLemma)) {
-                        float wholeRank = 0.0F;
-                        if (titleList.get(theExactLemma) != null) {
-                            Float titleRank = Float.valueOf(titleList.get(theExactLemma));
-                            wholeRank += titleRank;
-                        }
-                        if (bodyList.get(theExactLemma) != null) {
-                            float bodyRank = (float) (bodyList.get(theExactLemma) * 0.8);
-                            wholeRank += bodyRank;
-                        }
-                        DtoIndexList.add(new DtoIndex(pageId, lemmaId, wholeRank));
-                    } else {
-                        log.debug("Lemma not found");
-                    }
-                }
-            } else {
+            if (page.getCode() >= 400) {
                 log.debug("Status code - " + page.getCode());
+                continue;
+            }
+
+            long pageId = page.getId();
+            String content = page.getContent();
+            String title = HtmlCodeCleaner.clear(content, "title");
+            String body = HtmlCodeCleaner.clear(content, "body");
+            HashMap<String, Integer> titleList = morphology.getLemmaMap(title);
+            HashMap<String, Integer> bodyList = morphology.getLemmaMap(body);
+
+            for (LemmaEntity lemma : lemmaList) {
+                long lemmaId = lemma.getId();
+                String theExactLemma = lemma.getLemma();
+                if (!titleList.containsKey(theExactLemma) && !bodyList.containsKey(theExactLemma)) {
+                    log.debug("Lemma not found");
+                    continue;
+                }
+
+                float wholeRank = 0.0F;
+                if (titleList.get(theExactLemma) != null) {
+                    Float titleRank = Float.valueOf(titleList.get(theExactLemma));
+                    wholeRank += titleRank;
+                }
+                if (bodyList.get(theExactLemma) != null) {
+                    float bodyRank = (float) (bodyList.get(theExactLemma) * 0.8);
+                    wholeRank += bodyRank;
+                }
+                DtoIndexList.add(new DtoIndex(pageId, lemmaId, wholeRank));
             }
         }
     }
