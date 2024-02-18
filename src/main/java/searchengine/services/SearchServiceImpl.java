@@ -3,6 +3,7 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import searchengine.dto.statistics.SearchResult;
 import searchengine.dto.statistics.StatisticsSearch;
 import searchengine.model.IndexSearch;
 import searchengine.model.LemmaEntity;
@@ -28,28 +29,49 @@ public class SearchServiceImpl implements SearchService
     private final IndexSearchRepository indexSearchRepository;
     private final SiteRepository siteRepository;
 
+
     @Override
-    public List<StatisticsSearch> allSitesSearch(String searchText, int offset, int limit) {
-        log.info("Getting results of the search from all sites \"" + searchText + "\"");
-        List<SiteEntity> siteList = siteRepository.findAll();
-        List<StatisticsSearch> result = new ArrayList<>();
-        List<LemmaEntity> lemmaListResult = new ArrayList<>();
-        List<String> textLemmaList = getLemmaFromSearchText(searchText);
-        for (SiteEntity site : siteList) {
-            lemmaListResult.addAll(getLemmaEntityListFromSite(textLemmaList, site));
+    public SearchResult getSearchResult(String text, String site, int offset, int limit) {
+        List<StatisticsSearch> statisticsSearchList;
+        statisticsSearchList = site.isEmpty() ? allSitesSearch(text) : siteSearch(text, site);
+        List<StatisticsSearch> data = new ArrayList<>();
+        if (offset > statisticsSearchList.size()) {
+            return new SearchResult(true, 0, data);
+        } else if (statisticsSearchList.size() - offset < limit) {
+            for (int i = offset; i < statisticsSearchList.size(); i++) {
+                data.add(statisticsSearchList.get(i));
+            }
+
+        } else if (statisticsSearchList.size() > limit) {
+            for (int i = offset; i < limit + offset; i++) {
+                data.add(statisticsSearchList.get(i));
+            }
+        } else {
+            data = statisticsSearchList;
         }
+        return new SearchResult(true, statisticsSearchList.size(), data);
+    }
+
+    public List<LemmaEntity> getAllLemmaEntity(String query) {
+        List<LemmaEntity> lemmaListResult = new ArrayList<>();
+        List<String> queryLemmaList = getLemmaFromSearchText(query);
+        List<SiteEntity> siteList = siteRepository.findAll();
+        for (SiteEntity site : siteList) {
+            lemmaListResult.addAll(getLemmaEntityListFromSite(queryLemmaList, site));
+        }
+        return lemmaListResult;
+    }
+
+    public List<StatisticsSearch> allSitesSearch(String searchText) {
+        log.info("Getting results of the search from all sites \"" + searchText + "\"");
+        List<LemmaEntity> lemmaListResult = getAllLemmaEntity(searchText);
+        List<String> textLemmaList = getLemmaFromSearchText(searchText);
         List<StatisticsSearch> statisticsSearchList = null;
         for (String searchLemma : textLemmaList) {
             for (LemmaEntity l : lemmaListResult) {
                 if (l.getLemma().equals(searchLemma)) {
-                    statisticsSearchList = new ArrayList<>(getSearchDtoList(lemmaListResult, textLemmaList, offset, limit));
+                    statisticsSearchList = new ArrayList<>(getSearchDtoList(lemmaListResult, textLemmaList));
                     statisticsSearchList.sort((o1, o2) -> Float.compare(o2.getRelevance(), o1.getRelevance()));
-                    if (statisticsSearchList.size() > limit) {
-                        for (int i = offset; i < limit; i++) {
-                            result.add(statisticsSearchList.get(i));
-                        }
-                        return result;
-                    }
                 }
             }
         }
@@ -57,14 +79,14 @@ public class SearchServiceImpl implements SearchService
         return statisticsSearchList;
     }
 
-    @Override
-    public List<StatisticsSearch> siteSearch(String searchText, String url, int offset, int limit) {
+
+    public List<StatisticsSearch> siteSearch(String searchText, String url) {
         log.info("Searching for \"" + searchText + "\" in - " + url);
         SiteEntity site = siteRepository.findByUrl(url);
         List<String> textLemmaList = getLemmaFromSearchText(searchText);
         List<LemmaEntity> foundLemmaList = getLemmaEntityListFromSite(textLemmaList, site);
         log.info("Search done. Got results.");
-        return getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
+        return getSearchDtoList(foundLemmaList, textLemmaList);
     }
 
     private List<String> getLemmaFromSearchText(String searchText) {
@@ -164,7 +186,7 @@ public class SearchServiceImpl implements SearchService
     }
 
     private List<StatisticsSearch> getSearchDtoList(List<LemmaEntity> lemmaList,
-                                                    List<String> textLemmaList, int offset, int limit) {
+                                                    List<String> textLemmaList) {
         List<StatisticsSearch> result = new ArrayList<>();
         pageRepository.flush();
         if (lemmaList.size() >= textLemmaList.size()) {
@@ -172,18 +194,7 @@ public class SearchServiceImpl implements SearchService
             indexSearchRepository.flush();
             List<IndexSearch> foundIndexList = indexSearchRepository.findByPagesAndLemmas(lemmaList, foundPageList);
             Hashtable<PageEntity, Float> sortedPageByAbsRelevance = getPageAbsRelevance(foundPageList, foundIndexList);
-            List<StatisticsSearch> dataList = getStatisticsSearchList(sortedPageByAbsRelevance, textLemmaList);
-
-            if (offset > dataList.size()) {
-                return new ArrayList<>();
-            }
-
-            if (dataList.size() > limit) {
-                for (int i = offset; i < limit; i++) {
-                    result.add(dataList.get(i));
-                }
-                return result;
-            } else return dataList;
+            return getStatisticsSearchList(sortedPageByAbsRelevance, textLemmaList);
         } else return result;
     }
 

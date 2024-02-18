@@ -14,8 +14,6 @@ import searchengine.repositories.SiteRepository;
 import searchengine.services.IndexingService;
 import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
-
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -74,24 +72,10 @@ public class ApiController {
                                          @RequestParam(name = "limit", required = false, defaultValue = "20") int limit) {
         if (request.isEmpty()) {
             return ResponseEntity.badRequest().body(new ErrorResponse(false, "Задан пустой поисковый запрос"));
-        } else {
-            List<StatisticsSearch> statisticsSearchList;
-            if (!site.isEmpty() && siteRepository.findByUrl(site) == null) {
-                    return new ResponseEntity<>(new ErrorResponse(false, "Указанная страница не найдена"),
+        } else if (!site.isEmpty() && siteRepository.findByUrl(site) == null) {
+            return new ResponseEntity<>(new ErrorResponse(false, "Указанная страница не найдена"),
                             HttpStatus.BAD_REQUEST);
-            } if(!site.isEmpty()) {
-                statisticsSearchList = searchService.siteSearch(request, site, offset, limit);
-            } else {
-                statisticsSearchList = searchService.allSitesSearch(request, offset, limit);
-            }
-            if (!(statisticsSearchList == null)) {
-                return new ResponseEntity<>(new SearchResult(true, statisticsSearchList.size(),
-                        statisticsSearchList), HttpStatus.OK);
-            } else {
-                statisticsSearchList = new ArrayList<>();
-                return new ResponseEntity<>(new SearchResult(true, 0,
-                        statisticsSearchList), HttpStatus.OK);
-            }
         }
+        return new ResponseEntity<>(searchService.getSearchResult(request, site, offset, limit), HttpStatus.OK);
     }
 }

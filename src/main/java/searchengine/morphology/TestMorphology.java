@@ -17,7 +17,7 @@ public class TestMorphology
         LuceneMorphology luceneMorph =
                 new RussianLuceneMorphology();
         List<String> wordBaseForms =
-                luceneMorph.getNormalForms("красивая");
+                luceneMorph.getNormalForms("первая");
         wordBaseForms.forEach(System.out::println);
 
         // clean, split text and get lemma list with its quantities in text
@@ -36,7 +36,7 @@ public class TestMorphology
         // the same test for english words / text
         LuceneMorphology enMorphology = new EnglishLuceneMorphology();
         List<String> enWordBaseForms =
-                enMorphology.getNormalForms("estimating");
+                enMorphology.getNormalForms("issue");
         enWordBaseForms.forEach(System.out::println);
         List<String> enWordMorphInfo = enMorphology.getMorphInfo("love");
         enWordMorphInfo.forEach(System.out::println);

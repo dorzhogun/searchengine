@@ -1,11 +1,13 @@
 package searchengine.services;
 
+import searchengine.dto.statistics.SearchResult;
 import searchengine.dto.statistics.StatisticsSearch;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public interface SearchService
 {
-    List<StatisticsSearch> allSitesSearch(String text, int offset, int limit);
-    List<StatisticsSearch> siteSearch(String searchText, String url, int offset, int limit);
+    SearchResult getSearchResult(String text, String url, int offset, int limit);
+
 }
