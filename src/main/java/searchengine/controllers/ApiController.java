@@ -7,14 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.responses.ErrorResponse;
 import searchengine.dto.responses.Response;
-import searchengine.dto.statistics.SearchResult;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.dto.statistics.StatisticsSearch;
 import searchengine.repositories.SiteRepository;
 import searchengine.services.IndexingService;
 import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
-import java.util.List;
 
 @Slf4j
 @RestController
