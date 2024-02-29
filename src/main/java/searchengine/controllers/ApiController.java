@@ -73,6 +73,8 @@ public class ApiController {
             return new ResponseEntity<>(new ErrorResponse(false, "Указанная страница не найдена"),
                             HttpStatus.BAD_REQUEST);
         }
+
         return new ResponseEntity<>(searchService.getSearchResult(request, site, offset, limit), HttpStatus.OK);
+
     }
 }

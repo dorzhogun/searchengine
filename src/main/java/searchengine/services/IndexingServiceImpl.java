@@ -8,7 +8,7 @@ import searchengine.config.SitesList;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
 import searchengine.model.Status;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.IndexSearchRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
@@ -74,8 +74,8 @@ public class IndexingServiceImpl implements IndexingService {
     @Override
     public boolean urlIndexing(String url) {
         int first = url.indexOf("/", url.indexOf("/") + 2);
-        String path = url.substring(first);
-        if (urlCheck(url) && !(pageRepository.findPageByPath(path) == null)) {
+        String path = first != -1 ? url.substring(first) : "";
+        if (!path.isEmpty() && urlCheck(url) && !(pageRepository.findPageByPath(path) == null)) {
             log.info("Start indexing for single page : " + path);
             PageEntity page = pageRepository.findPageByPath(path);
             SiteEntity sitePage = page.getSiteEntity();
@@ -86,8 +86,9 @@ public class IndexingServiceImpl implements IndexingService {
             executorService.submit(new SinglePageParser(url, sitePage, path, siteRepository,
                     pageRepository, lemmaRepository, indexSearchRepository, morphology));
             return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     @Override

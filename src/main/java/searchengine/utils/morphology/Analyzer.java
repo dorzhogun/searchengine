@@ -1,4 +1,4 @@
-package searchengine.morphology;
+package searchengine.utils.morphology;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.LogManager;
@@ -11,10 +11,7 @@ import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -39,9 +36,9 @@ public class Analyzer implements Morphology
     private String checkLanguage(String word) {
         String rusAlphabet = "[а-яА-Я]+";
         String enAlphabet = "[a-zA-Z]+";
-        if (word.matches(rusAlphabet)) {
+        if (word.matches(rusAlphabet) && russianLuceneMorphology.checkString(word)) {
             return "RUS";
-        } else if (word.matches(enAlphabet)) {
+        } else if (word.matches(enAlphabet) && englishLuceneMorphology.checkString(word)) {
             return "ENG";
         } else {
             return "";
@@ -119,10 +116,11 @@ public class Analyzer implements Morphology
                     || form.contains("CONJ")
                     || form.contains("INTER")
                     || form.contains("ARTICLE")
-                    || form.length() <= 1) {
+                    || form.length() <= 2) {
                 return true;
             }
         }
         return false;
     }
+
 }

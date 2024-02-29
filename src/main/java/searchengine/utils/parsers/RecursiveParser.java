@@ -104,6 +104,6 @@ public class RecursiveParser extends RecursiveTask<List<DtoPage>> {
                 && !path.contains(".php") && !path.contains(".jpg") && !path.contains("#") && !path.contains("$")
                 && !path.contains(".png") && !path.contains(".pdf") && !path.contains("=") && !path.contains("%")
                 && !path.contains(".docx") && !path.contains(".xlsx") && !path.contains(".fig") && !path.contains(".doc")
-                && !path.contains(".pptx") && !path.contains(".jpeg");
+                && !path.contains(".pptx") && !path.contains(".jpeg") && !path.contains(".eps");
     }
 }

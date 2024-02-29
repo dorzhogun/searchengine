@@ -7,7 +7,7 @@ import searchengine.dto.statistics.DtoIndex;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
 

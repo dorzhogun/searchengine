@@ -9,7 +9,7 @@ import searchengine.model.IndexSearch;
 import searchengine.model.LemmaEntity;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.IndexSearchRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
@@ -34,6 +34,9 @@ public class SearchServiceImpl implements SearchService
     public SearchResult getSearchResult(String text, String site, int offset, int limit) {
         List<StatisticsSearch> statisticsSearchList;
         statisticsSearchList = site.isEmpty() ? allSitesSearch(text) : siteSearch(text, site);
+        if (statisticsSearchList == null) {
+            return new SearchResult(true, 0, new ArrayList<>());
+        }
         List<StatisticsSearch> data = new ArrayList<>();
         if (offset > statisticsSearchList.size()) {
             return new SearchResult(true, 0, data);

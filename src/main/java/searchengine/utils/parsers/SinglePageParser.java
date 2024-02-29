@@ -7,7 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import searchengine.dto.statistics.DtoIndex;
 import searchengine.model.*;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.IndexSearchRepository;
 import searchengine.repositories.LemmaRepository;
 import searchengine.repositories.PageRepository;
@@ -97,41 +97,21 @@ public class SinglePageParser implements Runnable {
 
     private void indexParsing() throws InterruptedException {
         if (!Thread.interrupted()) {
-            PageEntity page = pageRepository.findPageByPath(path);
+            PageEntity pageEntity = pageRepository.findPageByPath(path);
             List<LemmaEntity> lemmaList = lemmaRepository.findBySiteEntity(sitePage);
-            List<DtoIndex> dtoIndexList = new ArrayList<>();
-            long pageId = page.getId();
-            String content = page.getContent();
+            long pageId = pageEntity.getId();
+            String content = pageEntity.getContent();
             String title = HtmlCodeCleaner.clear(content, "title");
             String body = HtmlCodeCleaner.clear(content, "body");
             HashMap<String, Integer> titleList = morphology.getLemmaMap(title);
             HashMap<String, Integer> bodyList = morphology.getLemmaMap(body);
 
-            for (LemmaEntity lemma : lemmaList) {
-                long lemmaId = lemma.getId();
-                String theExactLemma = lemma.getLemma();
-                if (titleList.containsKey(theExactLemma) || bodyList.containsKey(theExactLemma)) {
-                    float wholeRank = 0.0F;
-                    if (titleList.get(theExactLemma) != null) {
-                        Float titleRank = Float.valueOf(titleList.get(theExactLemma));
-                        wholeRank += titleRank;
-                    }
-                    if (bodyList.get(theExactLemma) != null) {
-                        float bodyRank = (float) (bodyList.get(theExactLemma) * 0.8);
-                        wholeRank += bodyRank;
-                    }
-                    dtoIndexList.add(new DtoIndex(pageId, lemmaId, wholeRank));
-                } else {
-                    log.debug("Lemma not found");
-                }
-            }
-
-            List<DtoIndex> dtoIndexList2 = new CopyOnWriteArrayList<>(dtoIndexList);
+            List<DtoIndex> dtoIndexList2 = new CopyOnWriteArrayList<>(getDtoIndexList(lemmaList, titleList, bodyList, pageId));
             List<IndexSearch> indexList = new CopyOnWriteArrayList<>();
             for (DtoIndex dtoIndex : dtoIndexList2) {
-                PageEntity page2 = pageRepository.getReferenceById(dtoIndex.getPageID());
+                PageEntity page = pageRepository.getReferenceById(dtoIndex.getPageID());
                 LemmaEntity lemma = lemmaRepository.getReferenceById(dtoIndex.getLemmaID());
-                indexList.add(new IndexSearch(page2, lemma, dtoIndex.getRank()));
+                indexList.add(new IndexSearch(page, lemma, dtoIndex.getRank()));
             }
             indexSearchRepository.saveAllAndFlush(indexList);
             log.info("Done single page indexing - " + url);
@@ -140,5 +120,29 @@ public class SinglePageParser implements Runnable {
         } else {
             throw new InterruptedException();
         }
+    }
+
+    private List<DtoIndex> getDtoIndexList(List<LemmaEntity> lemmaList, HashMap<String,
+            Integer> titleList, HashMap<String, Integer> bodyList, long pageId) {
+        List<DtoIndex> dtoIndexList = new ArrayList<>();
+        for (LemmaEntity lemma : lemmaList) {
+            long lemmaId = lemma.getId();
+            String theExactLemma = lemma.getLemma();
+            if (titleList.containsKey(theExactLemma) || bodyList.containsKey(theExactLemma)) {
+                float wholeRank = 0.0F;
+                if (titleList.get(theExactLemma) != null) {
+                    Float titleRank = Float.valueOf(titleList.get(theExactLemma));
+                    wholeRank += titleRank;
+                }
+                if (bodyList.get(theExactLemma) != null) {
+                    float bodyRank = (float) (bodyList.get(theExactLemma) * 0.8);
+                    wholeRank += bodyRank;
+                }
+                dtoIndexList.add(new DtoIndex(pageId, lemmaId, wholeRank));
+            } else {
+                log.debug("Lemma not found");
+            }
+        }
+        return dtoIndexList;
     }
 }

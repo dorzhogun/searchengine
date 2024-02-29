@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import searchengine.dto.statistics.DtoLemma;
 import searchengine.model.PageEntity;
 import searchengine.model.SiteEntity;
-import searchengine.morphology.Morphology;
+import searchengine.utils.morphology.Morphology;
 import searchengine.repositories.PageRepository;
 
 import java.util.*;

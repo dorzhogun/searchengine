@@ -1,4 +1,4 @@
-package searchengine.morphology;
+package searchengine.utils.morphology;
 
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-
 public class TestMorphology
 {
+
     public static void main(String[] args) throws IOException
     {
         // get normal form of the word
@@ -42,16 +42,17 @@ public class TestMorphology
         enWordMorphInfo.forEach(System.out::println);
 
 
-        String enText = "Marry loves capitals. London is a capital of Great Britain.";
-        HashMap<String, Integer> map2en = analyzer.getLemmaMap(enText);
-        map2en.forEach((key,value) -> System.out.println(key + " - " + value));
+
+        String enText = "Mary loves capitals. London is a capital of Great Britain.";
 
         // get morphology information for each word to find service words in the text
-        List<String> wordsList2 = map2en.keySet().stream().toList();
+        List<String> wordsList2 = enMorphology.getNormalForms(enText);
         for (String word : wordsList2) {
             List<String> morphInfo2 = enMorphology.getMorphInfo(word);
             morphInfo2.forEach(System.out::println);
         }
+
+
     }
 
 }
